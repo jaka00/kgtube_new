@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .models import *
 from .forms import CommentForm
@@ -71,3 +71,11 @@ def video_delete(request, id):
     video_object = Video.objects.get(id=id)
     video_object.delete()
     return redirect(videos)
+
+def like_video(request, video_id): 
+    video = get_object_or_404(Video, id=video_id) 
+    video.likes += 1 
+    video.save() 
+ 
+ 
+    return redirect('video', id=video.id)

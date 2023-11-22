@@ -44,3 +44,4 @@ python manage.py createsuperuser
 # в core создаём папку templates
 # и в папку templates добавляем файл home.html
 
+<div class="yt-spec-touch-feedback-shape__fill" style></div>

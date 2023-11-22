@@ -7,7 +7,7 @@ git status
 git add .
 git commit -m "create project"
 git branch -M main
-git remote add origin git@github.com:Amankaium/kgtube.git
+git remote add origin https://github.com/jaka00/kgtube_new.git
 git push -u origin main
 
 # КАК ЗАЛИВАТЬ ИЗМЕНЕНИЯ?

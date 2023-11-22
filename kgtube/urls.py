@@ -42,6 +42,8 @@ urlpatterns = [
     path('profile/<int:id>/', profile_detail, name='profile-detail'),
     path('profile-update/<int:id>/', profile_update, name='profile-update'),
     path('profile-delete/<int:id>/', profile_delete, name='profile-delete'),
+    path('like_video/<int:video_id>/', like_video, name='like_video'),
+    path('<int:id>/', video, name='video'),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
