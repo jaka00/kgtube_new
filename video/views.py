@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import *
 from .forms import CommentForm
@@ -14,25 +14,29 @@ def video(request, id):
     # SELECT * FROM video_video WHERE id = 7;
     video_object = Video.objects.get(id=id)
     context = {}
-
     if request.user.is_authenticated:
         video_view, created = VideoView.objects.get_or_create(
             user=request.user,
             video=video_object,
         )
-
         if request.method == 'POST':
-            comment_form = CommentForm(request.POST)
-            if comment_form.is_valid():
-                comment = comment_form.save(commit=False) # ещё нет записи в БД
-                comment.user = request.user
-                comment.video = video_object
-                comment.save() # сохраняем в БД
-                messages.success(request, 'Комментарий успешно добавлен.')
-                return redirect(video, id=video_object.id)
-            else:
-                messages.error(request, 'Ошибка! Данные не валидны')
-
+            if "txt" in request.POST:
+                comment_form = CommentForm(request.POST)
+                if comment_form.is_valid():
+                    comment = comment_form.save(commit=False) # ещё нет записи в БД
+                    comment.user = request.user
+                    comment.video = video_object
+                    comment.save() # сохраняем в БД
+                    messages.success(request, 'Комментарий успешно добавлен.')
+                else:
+                    messages.error(request, 'Ошибка! Данные не валидны')
+            elif "like" in request.POST:
+                video_object.likes += 1
+                video_object.save()
+            elif "dislike" in request.POST:
+                video_object.likes -= 1
+                video_object.save()  
+            # return redirect(video, id=video_object.id)
     context = {
         "video": video_object,
         "comment_form": CommentForm()
@@ -49,6 +53,7 @@ def video_add(request):
         video_object = Video(
             name=name,
             file_path=video_file,
+            author=request.user
         )
         # video_object.description = "hello world"
         # INSERT INTO ...
@@ -71,11 +76,3 @@ def video_delete(request, id):
     video_object = Video.objects.get(id=id)
     video_object.delete()
     return redirect(videos)
-
-def like_video(request, video_id): 
-    video = get_object_or_404(Video, id=video_id) 
-    video.likes += 1 
-    video.save() 
- 
- 
-    return redirect('video', id=video.id)

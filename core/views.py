@@ -1,5 +1,7 @@
 from django.shortcuts import render, HttpResponse, redirect
+from django.contrib.auth.models import User
 from django.contrib import messages
+from django.db.models import Q
 from video.models import Video
 from .models import Profile
 from .forms import ProfileForm
@@ -15,7 +17,14 @@ def about_view(request):
 def search(request):
     key_word = request.GET["key_word"]
     # SELECT * FROM Video WHERE name LIKE '%key_word%'
-    videos_query = Video.objects.filter(name__contains=key_word)
+    # videos_query = Video.objects.filter(name__contains=key_word)
+    # videos_query = Video.objects.filter(description__contains=key_word)
+    videos_query = Video.objects.filter(
+        Q(name__contains=key_word) |
+        Q(author__username__contains=key_word) |
+        Q(description__contains=key_word),
+        is_published=True
+    )
     context = {"videos_list": videos_query}
     return render(request, "videos.html", context)
 
@@ -44,11 +53,24 @@ def profile_create(request):
     )
 
 def profile_detail(request, id):
+    context = {}
     profile_object = Profile.objects.get(id=id)
+    context["profile_object"] = profile_object
+
+    # subscribers_qty = profile_object.subscribers.count()
+    subscribers_qty = User.objects.filter(subscriptions=profile_object).count()
+    context["subscribers_qty"] = subscribers_qty
+
+    # [video_1, video_2, ...] видео этого пользователя
+    videos_list = profile_object.user.video_set.all()
+    # videos_list = Video.objects.filter(author=profile_object.user)
+    context["videos_list"] = videos_list 
+
+
     return render(
         request,
         'profile.html',
-        {"profile_object": profile_object}
+        context
     )
 
 def profile_update(request, id):
@@ -73,12 +95,29 @@ def profile_update(request, id):
         return HttpResponse("Нет доступа")
 
 def profile_delete(request, id):
-    profile_object = Profile.objects.get(id=id)
+    context = {}
     if request.user == profile_object.user:
-        context = {"profile_object": profile_object}
+        profile_object = Profile.objects.get(id=id)
+        context["profile_object"] = profile_object
+
         if request.method == "POST":
             profile_object.delete()
             return redirect(homepage)
         return render(request, "profile_delete.html", context)
     else:
         return HttpResponse("Нет доступа")
+
+
+def subscriber_add(request,id):
+    if request.method == "POST":
+        profile_object = Profile.objects.get(id=id)
+        profile_object.subscribers.add(request.user)
+        profile_object.save()
+        return redirect(profile_detail, id=profile_object.id)
+
+def subscriber_remove(request,id):
+    if request.method == "POST":
+        profile_object = Profile.objects.get(id=id)
+        profile_object.subscribers.remove(request.user)
+        profile_object.save()
+        return redirect(profile_detail, id=profile_object.id)
